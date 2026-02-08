@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'win-docker' }
+  agent { label 'windows-docker' }
 
   environment {
     AWS_REGION   = 'ap-southeast-1'
@@ -9,22 +9,54 @@ pipeline {
     FRONTEND_IMAGE = 'chess-frontend'
     IMAGE_TAG      = "${BUILD_NUMBER}"
 
-    EKS_CLUSTER   = 'chess-eks'
-    HELM_RELEASE  = 'chess-game'
-    HELM_CHART    = 'deploy/helm/chess-game'
-    K8S_NAMESPACE = 'chess'
+    EKS_CLUSTER    = 'chess-eks'
+    HELM_RELEASE   = 'chess-game'
+    HELM_CHART     = 'deploy/helm/chess-game'
+    K8S_NAMESPACE  = 'chess'
   }
 
   options { timestamps() }
 
   stages {
-    stage('Preflight') {
+    stage('Preflight (Tools)') {
       steps {
         bat 'echo Running on %COMPUTERNAME% && cd'
         bat 'docker version'
         bat 'aws --version'
         bat 'kubectl version --client'
         bat 'helm version'
+        bat 'trivy --version'
+      }
+    }
+
+    stage('A - Lint & Unit Tests') {
+      steps {
+        bat '''
+          docker run --rm -v "%CD%\\chess_backend:/app" -w /app node:18-alpine sh -lc "npm ci && npm test || true"
+        '''
+        bat '''
+          docker run --rm -v "%CD%\\chess_frontend:/app" -w /app node:18-alpine sh -lc "npm ci && npm test || true"
+        '''
+      }
+    }
+
+    stage('B - SCA (npm audit)') {
+      steps {
+        bat '''
+          docker run --rm -v "%CD%\\chess_backend:/app" -w /app node:18-alpine sh -lc "npm ci --silent && npm audit --audit-level=high"
+        '''
+        bat '''
+          docker run --rm -v "%CD%\\chess_frontend:/app" -w /app node:18-alpine sh -lc "npm ci --silent && npm audit --audit-level=high"
+        '''
+      }
+    }
+
+
+    stage('C - SAST (Semgrep)') {
+      steps {
+        bat '''
+          docker run --rm -v "%CD%:/src" -w /src returntocorp/semgrep semgrep --config=auto --error
+        '''
       }
     }
 
@@ -35,7 +67,15 @@ pipeline {
       }
     }
 
+    stage('D - Image Scan (Trivy)') {
+      steps {
+        bat 'trivy image --severity HIGH,CRITICAL --exit-code 1 %BACKEND_IMAGE%:%IMAGE_TAG%'
+        bat 'trivy image --severity HIGH,CRITICAL --exit-code 1 %FRONTEND_IMAGE%:%IMAGE_TAG%'
+      }
+    }
+
     stage('Login to ECR') {
+      when { branch 'main' }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
           bat 'aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ECR_REGISTRY%'
@@ -44,6 +84,7 @@ pipeline {
     }
 
     stage('Push Images') {
+      when { branch 'main' }
       steps {
         bat 'docker tag %BACKEND_IMAGE%:%IMAGE_TAG% %ECR_REGISTRY%/%BACKEND_IMAGE%:%IMAGE_TAG%'
         bat 'docker tag %FRONTEND_IMAGE%:%IMAGE_TAG% %ECR_REGISTRY%/%FRONTEND_IMAGE%:%IMAGE_TAG%'
@@ -58,6 +99,7 @@ pipeline {
     }
 
     stage('Deploy to EKS (Helm)') {
+      when { branch 'main' }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
           bat '''
@@ -77,6 +119,7 @@ pipeline {
 
   post {
     always {
+      // dọn images để tránh đầy disk
       bat 'docker image prune -f'
     }
   }
