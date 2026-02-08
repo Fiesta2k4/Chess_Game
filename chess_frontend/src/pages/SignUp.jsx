@@ -9,7 +9,9 @@ import { AUTH_VALIDATION_MESSAGES } from "../constants/validationMessages.js";
 
 // Sử dụng biến môi trường cho site key hoặc fallback về giá trị cứng
 const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com";
-const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY
+const ENABLE_RECAPTCHA = process.env.REACT_APP_ENABLE_RECAPTCHA === "true";
+const RECAPTCHA_SITE_KEY =
+  process.env.REACT_APP_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Test key
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -75,8 +77,8 @@ const SignUp = () => {
       newErrors.confirmPassword = AUTH_VALIDATION_MESSAGES.PASSWORD.MISMATCH;
     }
 
-    // CAPTCHA required for all registrations
-    if (!captchaToken) {
+    // CAPTCHA required for all registrations (when enabled)
+    if (ENABLE_RECAPTCHA && !captchaToken) {
       newErrors.captcha = AUTH_VALIDATION_MESSAGES.CAPTCHA.REQUIRED;
     }
 
@@ -96,13 +98,15 @@ const SignUp = () => {
       const cleanUsername = DOMPurify.sanitize(formData.username.trim());
       const cleanEmail = DOMPurify.sanitize(formData.email.trim());
 
-      // Always include captchaToken for registration
       const payload = {
         username: cleanUsername,
         email: cleanEmail,
-        password: formData.password,
-        captchaToken: captchaToken
+        password: formData.password
       };
+
+      if (ENABLE_RECAPTCHA) {
+        payload.captchaToken = captchaToken;
+      }
 
       const response = await axios.post(`${API_URL}/auth/register`, payload);
 
@@ -120,7 +124,7 @@ const SignUp = () => {
       console.error("Register error:", error);
 
       // Reset captcha if server rejects it
-      if (error.response?.data?.error?.includes("CAPTCHA")) {
+      if (ENABLE_RECAPTCHA && error.response?.data?.error?.includes("CAPTCHA")) {
         window.grecaptcha?.reset();
         setCaptchaToken(null);
       }
@@ -238,22 +242,24 @@ const SignUp = () => {
             )}
           </div>
 
-          <div className="form-group captcha-container">
-            <ReCAPTCHA
-              sitekey={RECAPTCHA_SITE_KEY}
-              onChange={handleCaptchaChange}
-            />
-            {errors.captcha && (
-              <span className="form-error" id="captcha-error">
-                {errors.captcha}
-              </span>
-            )}
-          </div>
+          {ENABLE_RECAPTCHA && (
+            <div className="form-group captcha-container">
+              <ReCAPTCHA
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={handleCaptchaChange}
+              />
+              {errors.captcha && (
+                <span className="form-error" id="captcha-error">
+                  {errors.captcha}
+                </span>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             className="signup-button"
-            disabled={isLoading || !captchaToken}
+            disabled={isLoading || (ENABLE_RECAPTCHA && !captchaToken)}
           >
             {isLoading ? "Creating Account..." : "Sign Up"}
           </button>
