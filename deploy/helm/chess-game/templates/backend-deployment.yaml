@@ -33,13 +33,28 @@ spec:
             - name: CLIENT_URL
               value: {{ .Values.backend.env.CLIENT_URL | quote }}
             - name: JWT_SECRET
-              value: {{ .Values.backend.env.JWT_SECRET | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName | quote }}
+                  key: JWT_SECRET
             - name: EMAIL_USER
-              value: {{ .Values.backend.env.EMAIL_USER | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName | quote }}
+                  key: EMAIL_USER
+                  optional: true
             - name: EMAIL_PASS
-              value: {{ .Values.backend.env.EMAIL_PASS | quote }}
-            - name: RECAPTCHA_SECRET
-              value: {{ .Values.backend.env.RECAPTCHA_SECRET | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName | quote }}
+                  key: EMAIL_PASS
+                  optional: true
+            - name: RECAPTCHA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName | quote }}
+                  key: RECAPTCHA_SECRET_KEY
+                  optional: true
           readinessProbe:
             httpGet:
               path: /health

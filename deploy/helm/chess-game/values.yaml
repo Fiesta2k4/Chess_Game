@@ -4,15 +4,13 @@ backend:
   replicaCount: 1
   service:
     port: 5000
+  secretName: chess-backend-secret
+  createSecret: false
   env:
     NODE_ENV: production
     PORT: "5000"
     MONGODB_URI: mongodb://mongo:27017/chess_game
     CLIENT_URL: http://chess-game.local
-    JWT_SECRET: change-me
-    EMAIL_USER: ""
-    EMAIL_PASS: ""
-    RECAPTCHA_SECRET: ""
 
 frontend:
   image: 855409827685.dkr.ecr.ap-southeast-1.amazonaws.com/chess-frontend
