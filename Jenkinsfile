@@ -72,7 +72,9 @@ pipeline {
     stage('Build Images') {
       steps {
         bat 'docker build -t %BACKEND_IMAGE%:%IMAGE_TAG% chess_backend'
-        bat 'docker build --build-arg REACT_APP_API_URL=/ -t %FRONTEND_IMAGE%:%IMAGE_TAG% chess_frontend'
+        withCredentials([string(credentialsId: 'recaptcha-site-key', variable: 'RECAPTCHA_SITE_KEY')]) {
+          bat 'docker build --build-arg REACT_APP_API_URL=/ --build-arg REACT_APP_RECAPTCHA_SITE_KEY=%RECAPTCHA_SITE_KEY% -t %FRONTEND_IMAGE%:%IMAGE_TAG% chess_frontend'
+        }
       }
     }
 
