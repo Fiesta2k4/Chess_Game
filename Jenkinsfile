@@ -72,7 +72,7 @@ pipeline {
     stage('Build Images') {
       steps {
         bat 'docker build -t %BACKEND_IMAGE%:%IMAGE_TAG% chess_backend'
-        bat 'docker build -t %FRONTEND_IMAGE%:%IMAGE_TAG% chess_frontend'
+        bat 'docker build --build-arg REACT_APP_API_URL=/ -t %FRONTEND_IMAGE%:%IMAGE_TAG% chess_frontend'
       }
     }
 
