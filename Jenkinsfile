@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+tools {
+  nodejs 'node18'
+}
+
   environment {
     AWS_REGION = 'ap-southeast-1'
     ECR_REGISTRY = '855409827685.dkr.ecr.ap-southeast-1.amazonaws.com'
@@ -21,7 +25,6 @@ pipeline {
     }
 
     stage('Basic Tests') {
-      agent { docker { image 'node:18-alpine' } }
       steps {
         sh 'node --version'
         sh 'npm --prefix chess_backend run -s test || echo "No backend tests"'
