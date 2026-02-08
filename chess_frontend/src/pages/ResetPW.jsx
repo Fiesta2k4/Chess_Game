@@ -3,8 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "../styles/Signin.css"; // reuse luôn Signin.css
 import { AUTH_VALIDATION_MESSAGES } from "../constants/validationMessages.js";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com"; // URL API của bạn
+import { API_BASE_URL } from "../utils/apiBase";
 
 const ResetPassword = () => {
   const { token } = useParams(); // lấy token từ URL
@@ -39,7 +38,7 @@ const ResetPassword = () => {
     setServerMessage({ type: "", text: "" });
 
     try {
-      const response = await axios.post(`${API_URL}/auth/reset-password/${token}`, { password });
+      const response = await axios.post(`${API_BASE_URL}/auth/reset-password/${token}`, { password });
 
       if (response.data && response.data.message) {
         setServerMessage({ type: "success", text: response.data.message });

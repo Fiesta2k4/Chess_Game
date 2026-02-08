@@ -1,12 +1,10 @@
 /* istanbul ignore file */
 import axios from 'axios';
 import { getToken } from '../utils/storage';
-
-// Create axios instance with environment variable or fallback URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://chess-sec.onrender.com';
+import { API_BASE_URL } from '../utils/apiBase';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
   }

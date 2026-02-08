@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import "../styles/Signin.css";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com";
+import { API_BASE_URL } from "../utils/apiBase";
 
 const PWRec = () => {
   const [email, setEmail] = useState("");
@@ -29,7 +28,7 @@ const PWRec = () => {
     setServerMessage({ type: "", text: "" });
 
     try {
-      const response = await axios.post(`${API_URL}/auth/recover`, { email });
+      const response = await axios.post(`${API_BASE_URL}/auth/recover`, { email });
 
       if (response.data && response.data.message) {
         setServerMessage({ 

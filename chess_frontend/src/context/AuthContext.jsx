@@ -2,9 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { getToken, setToken, removeToken, getUserId, setUserId, removeUserId } from '../utils/storage';
 import { connectSocket, disconnectSocket } from '../services/socket';
-
-// API base URL - fixed to match your backend routes
-const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com";
+import { API_BASE_URL } from '../utils/apiBase';
 
 // Create context
 const AuthContext = createContext(null);
@@ -28,7 +26,7 @@ export const AuthProvider = ({ children }) => {
           
           // Fetch user profile using the stored token
           // Changed from /api/users/profile/:userId to /auth/profile
-          const response = await axios.get(`${API_URL}/auth/profile`);
+          const response = await axios.get(`${API_BASE_URL}/auth/profile`);
           
           if (response.data) {
             setUser(response.data);
@@ -81,10 +79,10 @@ export const AuthProvider = ({ children }) => {
         
         if (typeof loginData === 'object' && loginData.username) {
           // If it's an object with username, it contains credentials
-          response = await axios.post(`${API_URL}/auth/login`, loginData);
+          response = await axios.post(`${API_BASE_URL}/auth/login`, loginData);
         } else if (args.length >= 2) {  // Use args.length instead of arguments.length
           // If two separate arguments (username, password) were provided
-          response = await axios.post(`${API_URL}/auth/login`, {
+          response = await axios.post(`${API_BASE_URL}/auth/login`, {
             username,
             password
           });
@@ -126,7 +124,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       
       // Changed from /api/users/register to /auth/register
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
         username,
         email,
         password
@@ -164,7 +162,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       // Changed from /api/users/profile/:userId to /auth/profile
-      const response = await axios.put(`${API_URL}/auth/profile`, userData);
+      const response = await axios.put(`${API_BASE_URL}/auth/profile`, userData);
       
       if (response.data) {
         setUser({...user, ...response.data});

@@ -7,8 +7,8 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Signin.css";
 import { AUTH_VALIDATION_MESSAGES } from "../constants/validationMessages.js";
+import { API_BASE_URL } from "../utils/apiBase";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com";
 // Use environment variable or fallback to test key
 const RECAPTCHA_SITE_KEY =
   process.env.REACT_APP_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Test key
@@ -87,7 +87,7 @@ const SignIn = () => {
         payload.captchaToken = captchaToken;
       }
 
-      const response = await axios.post(`${API_URL}/auth/login`, payload);
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, payload);
 
       if (response.data && response.data.token) {
         // Update auth context
