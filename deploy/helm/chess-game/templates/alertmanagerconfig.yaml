@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: chess-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: chess-game
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+spec:
+  route:
+    receiver: discord
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 3h
+  receivers:
+    - name: discord
+      webhookConfigs:
+        - url: "{{ .Values.alerts.discordWebhook }}"
+          sendResolved: true

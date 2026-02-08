@@ -1,0 +1,97 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+
+\title{Báo cáo triển khai Project 3: Secure Web Chess (Chess\_Game)}
+\author{Nhóm thực hiện}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Giới thiệu}
+Trong Project 3 này, hệ thống \textbf{Chess\_Game} được lấy từ project \textbf{Secure Web Chess}. Phạm vi của project hiện tại \textbf{không xây dựng lại ứng dụng} mà tập trung vào các nhiệm vụ triển khai hạ tầng, đóng gói container, logging/monitoring và CI/CD. Mục tiêu là đưa hệ thống lên AWS EKS, có giám sát bằng Prometheus/Grafana và pipeline Jenkins cho tự động hoá.
+
+\section{Kiến thức nền tảng}
+\begin{itemize}
+  \item \textbf{Docker}: đóng gói backend và frontend thành image, giúp triển khai nhất quán.
+  \item \textbf{Kubernetes (EKS)}: nền tảng điều phối container trên AWS.
+  \item \textbf{Helm}: quản lý manifest Kubernetes theo dạng chart, dễ triển khai và nâng cấp.
+  \item \textbf{Prometheus/Grafana}: thu thập metrics và hiển thị dashboard giám sát.
+  \item \textbf{Jenkins}: CI/CD tự động build, push image và deploy.
+  \item \textbf{AWS ECR}: registry lưu trữ image Docker.
+\end{itemize}
+
+\section{Quy trình thực hiện}
+\subsection{1. Đóng gói Docker}
+\begin{itemize}
+  \item Tạo Dockerfile cho backend (Node.js) và frontend (React + Nginx).
+  \item Chuẩn hoá build bằng \texttt{npm ci} để đảm bảo môi trường nhất quán.
+\end{itemize}
+
+\subsection{2. Bổ sung metrics backend}
+\begin{itemize}
+  \item Cài \texttt{prom-client} và thêm endpoint \texttt{/metrics} trong backend.
+  \item Bổ sung \texttt{/health} để dùng cho probe của Kubernetes.
+\end{itemize}
+
+\subsection{3. Triển khai EKS bằng eksctl}
+\begin{itemize}
+  \item Tạo file \texttt{eksctl.yaml} và tạo cụm \texttt{chess-eks} tại region \texttt{ap-southeast-1}.
+  \item Cấu hình \texttt{kubectl} kết nối cluster và kiểm tra node trạng thái Ready.
+\end{itemize}
+
+\subsection{4. Cài NGINX Ingress Controller}
+\begin{itemize}
+  \item Cài đặt ingress controller bằng Helm để cung cấp gateway HTTP/HTTPS.
+\end{itemize}
+
+\subsection{5. Cài Prometheus + Grafana}
+\begin{itemize}
+  \item Cài \texttt{kube-prometheus-stack} bằng Helm.
+  \item Xác nhận pod monitoring chạy ổn định.
+\end{itemize}
+
+\subsection{6. Deploy ứng dụng bằng Helm}
+\begin{itemize}
+  \item Cập nhật \texttt{values.yaml} trỏ tới ECR images.
+  \item Triển khai chart \texttt{chess-game} vào namespace \texttt{chess}.
+\end{itemize}
+
+\subsection{7. Expose frontend không cần domain}
+\begin{itemize}
+  \item Chuyển service \texttt{chess-frontend} sang \texttt{LoadBalancer} để lấy endpoint public từ AWS ELB.
+  \item FE truy cập qua URL ELB (không cần domain).
+\end{itemize}
+
+\subsection{8. CI/CD với Jenkins}
+\begin{itemize}
+  \item Cập nhật Jenkinsfile để build, push image lên ECR và deploy Helm lên EKS.
+  \item Yêu cầu Jenkins agent có \texttt{awscli}, \texttt{kubectl}, \texttt{helm}, \texttt{docker}.
+\end{itemize}
+
+\section{Kết quả triển khai}
+\begin{itemize}
+  \item \textbf{EKS cluster}: tạo thành công và hoạt động ổn định.
+  \item \textbf{Ingress/Monitoring}: ingress-nginx và kube-prometheus-stack đã deploy.
+  \item \textbf{Ứng dụng}: Helm release \texttt{chess-game} đã deploy thành công.
+  \item \textbf{Frontend public}: truy cập qua ELB (không cần domain).
+\end{itemize}
+
+\section{Ghi chú phạm vi}
+Project 3 chỉ tập trung vào triển khai, logging/monitoring và CI/CD. Phần ứng dụng \textbf{Chess\_Game} được lấy từ Secure Web Chess và \textbf{không sửa đổi nghiệp vụ chính}.
+
+\section{Tài liệu và cấu hình chính}
+\begin{itemize}
+  \item Helm chart: \texttt{deploy/helm/chess-game}
+  \item Hướng dẫn EKS: \texttt{deploy/EKS\_DEPLOY.md}
+  \item Jenkins pipeline: \texttt{Jenkinsfile}
+\end{itemize}
+
+\end{document}

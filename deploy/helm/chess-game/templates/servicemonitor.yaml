@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: chess-backend
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: chess-game
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - chess
+  selector:
+    matchLabels:
+      app: chess-backend
+  endpoints:
+    - port: http
+      path: "{{ .Values.prometheus.scrapePath }}"
+      interval: 15s

@@ -15,13 +15,33 @@ const gamesRoutes = require('./src/routes/game');
 const errorHandler = require('./src/middleware/errorHandler');
 const setupGameSocket = require('./src/socket/gameSocket');
 const logger = require('./src/utils/logger');
+const promClient = require('prom-client');
 
 // Initialize Express app
 const app = express();
 
+// Prometheus metrics
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code'],
+  registers: [register],
+});
+
 // Limit request body size to prevent large payload DoS
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer();
+  res.on('finish', () => {
+    const route = req.route?.path || req.originalUrl || req.path;
+    end({ method: req.method, route, status_code: res.statusCode });
+  });
+  next();
+});
 
 // Global rate limiter - applies to all routes
 const globalLimiter = rateLimit({
@@ -80,8 +100,21 @@ connectDB();
 app.use('/auth', authLimiter, authRoutes);
 app.use('/games', gamesRoutes);
 
+// Metrics endpoint (Prometheus)
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).send(err instanceof Error ? err.message : 'Metrics error');
+  }
+});
+
 // Base route
 app.get('/', (req, res) => res.send('Chess Game API Server'));
+
+// Health check
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 // Error handling middleware
 app.use(errorHandler);

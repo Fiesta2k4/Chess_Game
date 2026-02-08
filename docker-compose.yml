@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  chess-backend:
+    build:
+      context: ./chess_backend
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/chess_game
+      CLIENT_URL: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      RECAPTCHA_SECRET: ${RECAPTCHA_SECRET:-}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  chess-frontend:
+    build:
+      context: ./chess_frontend
+      args:
+        REACT_APP_API_URL: "/"
+    ports:
+      - "8080:80"
+    depends_on:
+      - chess-backend
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

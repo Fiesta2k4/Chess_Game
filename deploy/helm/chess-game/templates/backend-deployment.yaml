@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chess-backend
+  labels:
+    app.kubernetes.io/name: chess-game
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: chess-backend
+  template:
+    metadata:
+      labels:
+        app: chess-backend
+        app.kubernetes.io/name: chess-game
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: chess-backend
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.backend.service.port }}
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.backend.env.NODE_ENV | quote }}
+            - name: PORT
+              value: {{ .Values.backend.env.PORT | quote }}
+            - name: MONGODB_URI
+              value: {{ .Values.backend.env.MONGODB_URI | quote }}
+            - name: CLIENT_URL
+              value: {{ .Values.backend.env.CLIENT_URL | quote }}
+            - name: JWT_SECRET
+              value: {{ .Values.backend.env.JWT_SECRET | quote }}
+            - name: EMAIL_USER
+              value: {{ .Values.backend.env.EMAIL_USER | quote }}
+            - name: EMAIL_PASS
+              value: {{ .Values.backend.env.EMAIL_PASS | quote }}
+            - name: RECAPTCHA_SECRET
+              value: {{ .Values.backend.env.RECAPTCHA_SECRET | quote }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 20

@@ -11,3 +11,6 @@ chess_frontend/node_modules/
 #Ignore ca-key.pem, server-key.pem to not reveal the private key
 chess_backend/certs/ca-key.pem
 chess_backend/certs/server-key.pem
+
+# Ignore infra (Terraform) directory
+infra/
