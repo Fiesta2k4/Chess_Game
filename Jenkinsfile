@@ -87,7 +87,6 @@ pipeline {
     }
 
     stage('Login to ECR') {
-      when { branch 'main' }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
           bat 'aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ECR_REGISTRY%'
@@ -96,7 +95,6 @@ pipeline {
     }
 
     stage('Push Images') {
-      when { branch 'main' }
       steps {
         bat 'docker tag %BACKEND_IMAGE%:%IMAGE_TAG% %ECR_REGISTRY%/%BACKEND_IMAGE%:%IMAGE_TAG%'
         bat 'docker tag %FRONTEND_IMAGE%:%IMAGE_TAG% %ECR_REGISTRY%/%FRONTEND_IMAGE%:%IMAGE_TAG%'
@@ -111,7 +109,6 @@ pipeline {
     }
 
     stage('Deploy to EKS (Helm)') {
-      when { branch 'main' }
       steps {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
           bat '''
