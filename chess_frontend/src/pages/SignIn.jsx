@@ -9,7 +9,6 @@ import "../styles/Signin.css";
 import { AUTH_VALIDATION_MESSAGES } from "../constants/validationMessages.js";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://chess-sec.onrender.com";
-const ENABLE_RECAPTCHA = process.env.REACT_APP_ENABLE_RECAPTCHA === "true";
 // Use environment variable or fallback to test key
 const RECAPTCHA_SITE_KEY =
   process.env.REACT_APP_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Test key
@@ -59,7 +58,7 @@ const SignIn = () => {
     }
 
     // CAPTCHA validation
-    if (ENABLE_RECAPTCHA && requireCaptcha && !captchaToken) {
+    if (requireCaptcha && !captchaToken) {
       newErrors.captcha = AUTH_VALIDATION_MESSAGES.CAPTCHA.REQUIRED;
     }
 
@@ -84,7 +83,7 @@ const SignIn = () => {
       };
 
       // Add captcha token if required
-      if (ENABLE_RECAPTCHA && requireCaptcha) {
+      if (requireCaptcha) {
         payload.captchaToken = captchaToken;
       }
 
@@ -107,7 +106,7 @@ const SignIn = () => {
       console.error("Login error:", error);
 
       // If server requires CAPTCHA after failed attempts
-      if (ENABLE_RECAPTCHA && error.response?.data?.requireCaptcha) {
+      if (error.response?.data?.requireCaptcha) {
         setRequireCaptcha(true);
 
         // Reset captcha if it was already displayed
@@ -118,7 +117,7 @@ const SignIn = () => {
       }
 
       // Reset captcha if the error is related to captcha validation
-      if (ENABLE_RECAPTCHA && requireCaptcha && error.response?.data?.error?.includes("CAPTCHA")) {
+      if (requireCaptcha && error.response?.data?.error?.includes("CAPTCHA")) {
         window.grecaptcha?.reset();
         setCaptchaToken(null);
       }
@@ -196,7 +195,7 @@ const SignIn = () => {
             )}
           </div>
 
-          {ENABLE_RECAPTCHA && requireCaptcha && (
+          {requireCaptcha && (
             <div className="form-group captcha-container">
               <ReCAPTCHA
                 sitekey={RECAPTCHA_SITE_KEY}
@@ -213,7 +212,7 @@ const SignIn = () => {
           <button
             type="submit"
             className="signin-button"
-            disabled={isLoading || (ENABLE_RECAPTCHA && requireCaptcha && !captchaToken)}
+            disabled={isLoading || (requireCaptcha && !captchaToken)}
           >
             {isLoading ? "Signing In..." : "Sign In"}
           </button>

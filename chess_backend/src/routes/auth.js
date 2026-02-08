@@ -25,8 +25,8 @@ router.post('/register', registerValidation, handleValidation, validateCaptcha, 
   try {
     const { username, email, password, captchaToken } = req.body;
     
-    // Kiểm tra CAPTCHA cho đăng ký (khi bật)
-    if (process.env.ENABLE_RECAPTCHA === 'true' && !captchaToken) {
+    // Kiểm tra CAPTCHA cho đăng ký (luôn yêu cầu)
+    if (!captchaToken) {
       return res.status(400).json({ error: 'CAPTCHA verification required' });
     }
     

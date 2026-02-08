@@ -4,10 +4,6 @@ const User = require('../models/user'); // Add this import for the User model
 
 const validateCaptcha = async (req, res, next) => {
   try {
-    if (process.env.ENABLE_RECAPTCHA !== 'true') {
-      return next();
-    }
-
     // Kiểm tra xem người dùng có yêu cầu xác minh captcha không
     const user = await User.findOne({ username: req.body.username });
     
