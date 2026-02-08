@@ -21,6 +21,7 @@ pipeline {
     }
 
     stage('Basic Tests') {
+      agent { docker { image 'node:18-alpine' } }
       steps {
         sh 'node --version'
         sh 'npm --prefix chess_backend run -s test || echo "No backend tests"'
