@@ -90,5 +90,4 @@ A secure, real-time web-based chess platform allowing users to play matches onli
   Made with ❤️ by the LoneLy Star Team
 </p>
 
-test
 
