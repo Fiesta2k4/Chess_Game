@@ -1,0 +1,59 @@
+stages:
+  - review
+
+variables:
+  # Avoid shallow clone issues when diffing against target branch
+  GIT_DEPTH: 0
+
+copilot_ai_review:
+  stage: review
+  tags:
+    - ai-runner
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "staging"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "prod"'
+  script:
+    # Fetch target branch
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+
+    # Generate diff (MR changes only)
+    - git diff "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME...HEAD" > diff.txt
+
+    # Optional: filter noisy/sensitive files (recommended)
+    - |
+      git diff "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME...HEAD"         -- .         ':(exclude)*.env'         ':(exclude)package-lock.json'         ':(exclude)yarn.lock'         ':(exclude)dist/'         > diff.txt
+
+    # Trim diff size
+    - head -n 8000 diff.txt > trimmed_diff.txt
+
+    # Run Copilot Review (PROMPT QUALITY IS KEY)
+    - |
+      copilot -p "
+      Review this Git diff.
+      Focus on:
+      - bugs
+      - security issues
+      - performance problems
+      - bad practices
+      - missing validation
+      Ignore formatting issues.
+      Provide:
+      1. Summary
+      2. Must fix
+      3. Should fix
+      4. Suggestions
+      Group by file.
+      " < trimmed_diff.txt > review.md
+
+    # Escape JSON safely (handles quotes + newlines)
+    - REVIEW_BODY=$(python3 - <<'PY'
+import json, pathlib
+text = pathlib.Path("review.md").read_text(encoding="utf-8")
+print(json.dumps(text)[1:-1])
+PY
+      )
+
+    # Post comment to MR
+    - |
+      curl --request POST         --header "PRIVATE-TOKEN: $GITLAB_TOKEN"         --header "Content-Type: application/json"         --data "{\"body\":\"$REVIEW_BODY\"}"         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes"
